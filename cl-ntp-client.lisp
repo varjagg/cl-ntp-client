@@ -4,7 +4,7 @@
 
 (in-package #:cl-ntp-client)
 
-(define-constant +epoch-timestamp-delta+ 2208988800)
+(alexandria:define-constant +epoch-timestamp-delta+ 2208988800)
 
 (defclass ntp ()
   ((buffer :reader buffer :initform (make-array 48 :element-type '(unsigned-byte 8) :initial-element 0)
@@ -18,6 +18,12 @@
 	  (ash (aref array (1+ pos)) 16)
 	  (ash (aref array (+ pos 2)) 8)
 	  (aref array (+ pos 3))))
+
+(defun write32 (array pos val)
+  (setf (aref array pos) (ldb (byte 8 24) val)
+	(aref array (1+ pos)) (ldb (byte 8 16) val)
+	(aref array (+ pos 2)) (ldb (byte 8 8) val)
+	(aref array (+ pos 3)) (ldb (byte 8 0) val)))
 
 (defmethod leap-indicator ((o ntp))
   (ldb (byte 2 6) (aref (buffer o) 0)))
@@ -70,7 +76,7 @@
 (defmethod origtm-f ((o ntp))
   (read32 (buffer o) 28))
 
-(defmethod (setf origtm-t) (stamp (o ntp))
+(defmethod (setf origtm-f) (stamp (o ntp))
   (write32 (buffer o) 28 stamp))
 
 (defmethod rxtm-s ((o ntp))
@@ -87,7 +93,8 @@
 
 (defmethod initialize-instance :after ((o ntp) &key &allow-other-keys)
   (setf (version-number o) 3
-	(mode o) 3))
+	(mode o) 3
+	(stratum o) 8))
 
 (defmethod get-adjusted-universal-time ((o ntp))
   (values (+ (get-universal-time) (offset-s o)) (offset-f o)))
@@ -95,9 +102,11 @@
 (defmethod run-server-exchange ((o ntp) address)
   (let ((socket (usocket:socket-connect address 123 :protocol :datagram
 					:element-type '(unsigned-byte 8)))
-	(dgram-length (length buffer)))
+	(dgram-length (length (buffer o))))
     (unwind-protect
 	 (multiple-value-bind (seconds fraction) (get-adjusted-universal-time o)
+	   (setf (origtm-s o) seconds
+		 (origtm-f o) fraction)
 	   (usocket:socket-send socket (buffer o) dgram-length)
 	   (usocket:socket-receive socket (buffer o) dgram-length)
 	   (multiple-value-bind (s f) (get-adjusted-universal-time o)
