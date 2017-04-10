@@ -7,7 +7,10 @@
 (define-constant +epoch-timestamp-delta+ 2208988800)
 
 (defclass ntp ()
-  ((buffer :reader buffer :initform (make-array 48 :element-type '(unsigned-byte 8)) :type '(simple-array (unsigned-byte 8) (48)))
+  ((buffer :reader buffer :initform (make-array 48 :element-type '(unsigned-byte 8) :initial-element 0)
+	   :type '(simple-array (unsigned-byte 8) (48)))
+   (offset-s :accessor offset-s :type 'integer :initform 0)
+   (offset-f :accessor offset-f :type 'integer :initform 0)
    (servers :accessor servers :initform '())))
 
 (defun read32 (array pos)
@@ -61,8 +64,14 @@
 (defmethod origtm-s ((o ntp))
   (read32 (buffer o) 24))
 
+(defmethod (setf origtm-s) (stamp (o ntp))
+  (write32 (buffer o) 24 stamp))
+
 (defmethod origtm-f ((o ntp))
   (read32 (buffer o) 28))
+
+(defmethod (setf origtm-t) (stamp (o ntp))
+  (write32 (buffer o) 28 stamp))
 
 (defmethod rxtm-s ((o ntp))
   (read32 (buffer o) 32))
@@ -84,8 +93,16 @@
   (values (+ (get-universal-time) (offset-s o)) (offset-f o)))
 
 (defmethod run-server-exchange ((o ntp) address)
-  (multiple-value-bind (seconds fraction) (get-adjusted-universal-time o)
-    ))
+  (let ((socket (usocket:socket-connect address 123 :protocol :datagram
+					:element-type '(unsigned-byte 8)))
+	(dgram-length (length buffer)))
+    (unwind-protect
+	 (multiple-value-bind (seconds fraction) (get-adjusted-universal-time o)
+	   (usocket:socket-send socket (buffer o) dgram-length)
+	   (usocket:socket-receive socket (buffer o) dgram-length)
+	   (multiple-value-bind (s f) (get-adjusted-universal-time o)
+	     (values s f)))
+      (usocket:socket-close socket))))
 
 (defmethod synchronize ((o ntp))
   (loop for server in (servers o) do
