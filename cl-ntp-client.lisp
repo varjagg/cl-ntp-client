@@ -22,11 +22,20 @@
 (defmethod version-number ((o ntp))
   (ldb (byte 3 3) (aref (buffer o) 0)))
 
+(defmethod (setf version-number) (new-value (o ntp))
+  (setf (ldb (byte 3 3) (aref (buffer o) 0)) new-value))
+
 (defmethod mode ((o ntp))
   (ldb (byte 3 0) (aref (buffer o) 0)))
 
+(defmethod (setf mode) (new-value (o ntp))
+  (setf (ldb (byte 3 0) (aref (buffer o) 0)) new-value))
+
 (defmethod stratum ((o ntp))
   (aref (buffer 0) 1))
+
+(defmethod (setf stratum) (stratum (o ntp))
+  (setf (aref (buffer 0) 1) stratum))
 
 (defmethod poll ((o ntp))
   (aref (buffer o) 2))
@@ -66,3 +75,18 @@
 
 (defmethod txtm-f ((o ntp))
   (read32 (buffer o) 44))
+
+(defmethod initialize-instance :after ((o ntp) &key &allow-other-keys)
+  (setf (version-number o) 3
+	(mode o) 3))
+
+(defmethod get-adjusted-universal-time ((o ntp))
+  (values (+ (get-universal-time) (offset-s o)) (offset-f o)))
+
+(defmethod run-server-exchange ((o ntp) address)
+  (multiple-value-bind (seconds fraction) (get-adjusted-universal-time o)
+    ))
+
+(defmethod synchronize ((o ntp))
+  (loop for server in (servers o) do
+       (run-server-exchange o server)))
