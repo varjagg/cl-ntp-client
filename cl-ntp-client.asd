@@ -3,7 +3,7 @@
 ;;;; Copyright (c) 2017 Eugene Zaikonnikov
 
 (asdf:defsystem #:cl-ntp-client
-  :description "Describe cl-ntp-client here"
+  :description "A simple NTP (Network Time Protocol) client in Common Lisp"
   :author "Eugene Zaikonnikov"
   :license "BSD"
   :depends-on (#:alexandria
