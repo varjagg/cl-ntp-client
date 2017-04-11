@@ -1,5 +1,6 @@
-;;;; cl-ntp-client.lisp
-;;;;
+;;;; A simple Common Lisp NTP client
+;;;; Should provide a way to get real time with decent fractional precision in a Lisp program, assuming you re-adjust periodically
+;;;; Does not adjust system clock, PLL drift or do any other platform specific work 
 ;;;; Copyright (c) 2017 Eugene Zaikonnikov
 
 (in-package #:cl-ntp-client)
@@ -11,7 +12,7 @@
 	   :type '(simple-array (unsigned-byte 8) (48)))
    (offset-s :accessor offset-s :type 'integer :initform 0)
    (offset-f :accessor offset-f :type 'integer :initform 0)
-   (servers :accessor servers :initform '())))
+   (local-stratum :accessor local-stratum :type 'integer :initform 8)))
 
 (defun read32 (array pos)
   (logior (ash (aref array pos) 24)
@@ -25,12 +26,16 @@
 	(aref array (+ pos 2)) (ldb (byte 8 8) val)
 	(aref array (+ pos 3)) (ldb (byte 8 0) val)))
 
+;;; We don't define any specialized arithmetic for NTP timestamps but rathter provide integer conversions
+;;; and rely on Common Lisp bignum arithmetic to do the job
 (defmacro big-time (values)
+  "Convert the NTP second/fraction value pair into a (large) integer"
   (alexandria:with-gensyms (s f)
     `(multiple-value-bind (,s ,f) ,values
        (+ (ash ,s 32) ,f))))
 
 (defmacro small-time (time)
+  "Convert the integer time representation back into NTP value pair domain"
   `(values (ash ,time -32) (logand ,time #xffffffff)))
 
 (defmethod leap-indicator ((o ntp))
@@ -50,9 +55,6 @@
 
 (defmethod stratum ((o ntp))
   (aref (buffer o) 1))
-
-(defmethod (setf stratum) (stratum (o ntp))
-  (setf (aref (buffer o) 1) stratum))
 
 (defmethod poll ((o ntp))
   (aref (buffer o) 2))
@@ -99,13 +101,19 @@
 (defmethod txtm-f ((o ntp))
   (read32 (buffer o) 44))
 
-#+nil(defmethod initialize-instance :after ((o ntp) &key &allow-other-keys)
-  (setf (version-number o) 3
-	(mode o) 3
-	(stratum o) 8))
+(defun internal-to-fraction (internal)
+  (truncate (ash internal 32) internal-time-units-per-second))
 
+(defun fraction-to-internal (fraction)
+  (ash (* fraction internal-time-units-per-second) -32))
+
+;;; here we take arbitrary subsecond fraction of internal run time for lack of 'real' universal subsecond
+;;; which is fine as long as it's consistent for duraction of program
+;;; the calculated offset ensures it adjusted properly
 (defmethod get-adjusted-universal-time ((o ntp))
-  (values (+ (get-universal-time) (offset-s o)) (offset-f o)))
+  (values (+ (get-universal-time) (offset-s o))
+	  (+ (internal-time-to-fraction (rem (get-internal-run-time) internal-time-units-per-second))
+	     (offset-f o))))
 
 (defmethod run-server-exchange ((o ntp) address)
   "Communicates with remote server to return time offset from the local clock"
@@ -114,8 +122,7 @@
 					:timeout 2))
 	(dgram-length (length (buffer o))))
     (setf (version-number o) 3
-	  (mode o) 3
-	(stratum o) 8)
+	  (mode o) 3)
     (unwind-protect
 	 (multiple-value-bind (seconds fraction) (get-adjusted-universal-time o)
 	   (setf (origtm-s o) seconds
@@ -123,13 +130,17 @@
 	   (usocket:socket-send socket (buffer o) dgram-length)
 	   (usocket:socket-receive socket (buffer o) dgram-length)
 	   (let* ((receive-stamp (big-time (get-adjusted-universal-time o)))
+		  (transmit-time (big-time (values (txtm-s o) (txtm-f o))))
 		  (delay (floor (- (- receive-stamp (big-time (values seconds fraction)))
-				   (- (big-time (values (txtm-s o) (txtm-f o))) (big-time (values (rxtm-s o) (rxtm-f o)))))
-				2)))
-	     (multiple-value-bind (s f) (small-time (- receive-stamp delay))
-	       (values (- (get-universal-time) s) f))))
+				   (- transmit-time (big-time (values (rxtm-s o) (rxtm-f o)))))
+				2))
+		  (deduced (+ transmit-time delay))
+		  (delta (- deduced receive-stamp)))
+	     (setf (local-stratum o) (1+ (stratum o)))
+	     (small-time delta)))
       (usocket:socket-close socket))))
 
-(defmethod synchronize ((o ntp))
-  (loop for server in (servers o) do
-       (run-server-exchange o server)))
+(defmethod synchronize ((o ntp) &optional (server "time.mnist.gov"))
+  (multiple-value-bind (ds df) (run-server-exchange o server)
+    (incf (offset-s o) ds)
+    (incf (offset-f o) df)))
