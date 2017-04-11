@@ -112,7 +112,7 @@
 ;;; the calculated offset ensures it adjusted properly
 (defmethod get-adjusted-universal-time ((o ntp))
   (values (+ (get-universal-time) (offset-s o))
-	  (+ (internal-time-to-fraction (rem (get-internal-run-time) internal-time-units-per-second))
+	  (+ (internal-to-fraction (rem (get-internal-run-time) internal-time-units-per-second))
 	     (offset-f o))))
 
 (defmethod run-server-exchange ((o ntp) address)
@@ -140,7 +140,7 @@
 	     (small-time delta)))
       (usocket:socket-close socket))))
 
-(defmethod synchronize ((o ntp) &optional (server "time.mnist.gov"))
+(defmethod synchronize ((o ntp) &optional (server "time.nist.gov"))
   (multiple-value-bind (ds df) (run-server-exchange o server)
     (incf (offset-s o) ds)
     (incf (offset-f o) df)))
