@@ -52,7 +52,7 @@
   (aref (buffer 0) 1))
 
 (defmethod (setf stratum) (stratum (o ntp))
-  (setf (aref (buffer 0) 1) stratum))
+  (setf (aref (buffer o) 1) stratum))
 
 (defmethod poll ((o ntp))
   (aref (buffer o) 2))
@@ -117,10 +117,12 @@
 		 (origtm-f o) fraction)
 	   (usocket:socket-send socket (buffer o) dgram-length)
 	   (usocket:socket-receive socket (buffer o) dgram-length)
-	   (let ((delay (/ (- (- (big-time (get-adjusted-universal-time o)) (big-time (values second fraction)))
-			      (- (big-time (values (txtm-s o) (txtm-f o))) (big-time (values (rxtm-s o) (rxtm-f o)))))
-			   2)))
-	     ))
+	   (let* ((receive-stamp (big-time (get-adjusted-universal-time o)))
+		  (delay (/ (- (- receive-stamp (big-time (values seconds fraction)))
+			       (- (big-time (values (txtm-s o) (txtm-f o))) (big-time (values (rxtm-s o) (rxtm-f o)))))
+			    2)))
+	     (multiple-value-bind (s f) (small-time (- receive-stamp delay))
+	       (values (- (get-universal-time) s) f))))
       (usocket:socket-close socket))))
 
 (defmethod synchronize ((o ntp))
