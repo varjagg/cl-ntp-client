@@ -25,19 +25,13 @@
 	(aref array (+ pos 2)) (ldb (byte 8 8) val)
 	(aref array (+ pos 3)) (ldb (byte 8 0) val)))
 
-(defmacro time+ (values1 values2)
-  (alexandria:with-gensyms (sum s1 s2 f1 f2)
-    `(multiple-value-bind (,s1 ,f1) ,values1
-       (multiple-value-bind (,s2 ,f2) ,values2
-	 (let ((,sum (+ (+ (ash ,s1 32) ,f1) (+ (ash ,s2 32) ,f2))))
-	   (values (ash ,sum -32) (logand ,sum #xffffffff)))))))
+(defmacro big-time (values)
+  (alexandria:with-gensyms (s f)
+    `(multiple-value-bind (,s ,f) ,values
+       (+ (ash ,s 32) ,f))))
 
-(defmacro time- (values1 values2)
-  (alexandria:with-gensyms (diff s1 s2 f1 f2)
-    `(multiple-value-bind (,s1 ,f1) ,values1
-       (multiple-value-bind (,s2 ,f2) ,values2
-	 (let ((,diff (- (+ (ash ,s1 32) ,f1) (+ (ash ,s2 32) ,f2))))
-	   (values (ash ,diff -32) (logand ,diff #xffffffff)))))))
+(defmacro small-time (time)
+  `(values (ash ,time -32) (logand ,time #xffffffff)))
 
 (defmethod leap-indicator ((o ntp))
   (ldb (byte 2 6) (aref (buffer o) 0)))
@@ -123,9 +117,10 @@
 		 (origtm-f o) fraction)
 	   (usocket:socket-send socket (buffer o) dgram-length)
 	   (usocket:socket-receive socket (buffer o) dgram-length)
-	   (multiple-value-bind (s f) (get-adjusted-universal-time o)
-	     (time-subtract )
-	     (values s f)))
+	   (let ((delay (/ (- (- (big-time (get-adjusted-universal-time o)) (big-time (values second fraction)))
+			      (- (big-time (values (txtm-s o) (txtm-f o))) (big-time (values (rxtm-s o) (rxtm-f o)))))
+			   2)))
+	     ))
       (usocket:socket-close socket))))
 
 (defmethod synchronize ((o ntp))
