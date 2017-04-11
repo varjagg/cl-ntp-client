@@ -99,7 +99,7 @@
 (defmethod txtm-f ((o ntp))
   (read32 (buffer o) 44))
 
-(defmethod initialize-instance :after ((o ntp) &key &allow-other-keys)
+#+nil(defmethod initialize-instance :after ((o ntp) &key &allow-other-keys)
   (setf (version-number o) 3
 	(mode o) 3
 	(stratum o) 8))
@@ -110,7 +110,8 @@
 (defmethod run-server-exchange ((o ntp) address)
   "Communicates with remote server to return time offset from the local clock"
   (let ((socket (usocket:socket-connect address 123 :protocol :datagram
-					:element-type '(unsigned-byte 8)))
+					:element-type '(unsigned-byte 8)
+					:timeout 2))
 	(dgram-length (length (buffer o))))
     (setf (version-number o) 3
 	  (mode o) 3
