@@ -108,9 +108,13 @@
   (values (+ (get-universal-time) (offset-s o)) (offset-f o)))
 
 (defmethod run-server-exchange ((o ntp) address)
+  "Communicates with remote server to return time offset from the local clock"
   (let ((socket (usocket:socket-connect address 123 :protocol :datagram
 					:element-type '(unsigned-byte 8)))
 	(dgram-length (length (buffer o))))
+    (setf (version-number o) 3
+	  (mode o) 3
+	(stratum o) 8)
     (unwind-protect
 	 (multiple-value-bind (seconds fraction) (get-adjusted-universal-time o)
 	   (setf (origtm-s o) seconds
