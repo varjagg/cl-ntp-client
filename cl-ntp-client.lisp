@@ -49,7 +49,7 @@
   (setf (ldb (byte 3 0) (aref (buffer o) 0)) new-value))
 
 (defmethod stratum ((o ntp))
-  (aref (buffer 0) 1))
+  (aref (buffer o) 1))
 
 (defmethod (setf stratum) (stratum (o ntp))
   (setf (aref (buffer o) 1) stratum))
