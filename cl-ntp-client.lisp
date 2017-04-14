@@ -112,7 +112,7 @@
 ;;; the calculated offset ensures it adjusted properly
 (defmethod get-adjusted-universal-time ((o ntp))
   (values (+ (get-universal-time) (offset-s o))
-	  (+ (internal-to-fraction (rem (get-internal-run-time) internal-time-units-per-second))
+	  (+ (internal-to-fraction (rem (get-internal-real-time) internal-time-units-per-second))
 	     (offset-f o))))
 
 (defmethod run-server-exchange ((o ntp) address)
