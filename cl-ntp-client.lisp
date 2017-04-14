@@ -107,8 +107,16 @@
 (defun fraction-to-internal (fraction)
   (ash (* fraction internal-time-units-per-second) -32))
 
+(defun calibrate-real-leap ()
+  "Find the correspondence between universal time and internal real time"
+  (declare (optimize (speed 3) (space 0) (debug 0)))
+  (loop with sec = (get-universal-time)
+     for rt = (get-internal-real-time)
+     when (> (get-universal-time) sec)
+     return (rem rt internal-time-units-per-second)))
+
 ;;; here we take arbitrary subsecond fraction of internal run time for lack of 'real' universal subsecond
-;;; which is fine as long as it's consistent for duraction of program
+;;; which is fine as long as it's consistent for duration of the program
 ;;; the calculated offset ensures it adjusted properly
 (defmethod get-adjusted-universal-time ((o ntp))
   (values (+ (get-universal-time) (offset-s o))
@@ -143,4 +151,4 @@
 (defmethod synchronize ((o ntp) &optional (server "time.nist.gov"))
   (multiple-value-bind (ds df) (run-server-exchange o server)
     (incf (offset-s o) ds)
-    (incf (offset-f o) df)))
+    (incf (offset-f o) (print df))))
