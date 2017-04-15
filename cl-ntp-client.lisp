@@ -144,4 +144,4 @@
       (usocket:socket-close socket))))
 
 (defmethod synchronize ((o ntp) &optional (server "pool.ntp.org"))
-  (incf (offset o) (print (run-server-exchange o server))))
+  (incf (offset o) (run-server-exchange o server)))
