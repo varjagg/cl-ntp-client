@@ -115,6 +115,12 @@
      when (> (get-universal-time) sec)
      return (rem rt internal-time-units-per-second)))
 
+(defun real-big-time ()
+  (let* ((time (get-internal-real-time))
+	 (seconds (truncate time internal-time-units-per-second))
+	 (fractions (- time (* seconds internal-time-units-per-second))))
+    (big-time (values seconds (internal-to-fraction fractions)))))
+
 ;;; here we take arbitrary subsecond fraction of internal run time for lack of 'real' universal subsecond
 ;;; which is fine as long as it's consistent for duration of the program
 ;;; the calculated offset ensures it adjusted properly
