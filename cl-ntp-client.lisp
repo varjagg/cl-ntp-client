@@ -6,6 +6,18 @@
 
 (in-package #:cl-ntp-client)
 
+;;; We don't define any specialized arithmetic for NTP timestamps but rathter provide integer conversions
+;;; and rely on Common Lisp bignum arithmetic to do the job
+(defmacro big-time (values)
+  "Convert the NTP second/fraction value pair into a (large) integer"
+  (alexandria:with-gensyms (s f)
+    `(multiple-value-bind (,s ,f) ,values
+       (+ (ash ,s 32) ,f))))
+
+(defmacro small-time (time)
+  "Convert the integer time representation back into NTP value pair domain"
+  `(values (ash ,time -32) (logand ,time #xffffffff)))
+
 (defclass ntp ()
   ((buffer :reader buffer :initform (make-array 48 :element-type '(unsigned-byte 8) :initial-element 0)
 	   :type '(simple-array (unsigned-byte 8) (48)))
@@ -24,18 +36,6 @@
 	(aref array (1+ pos)) (ldb (byte 8 16) val)
 	(aref array (+ pos 2)) (ldb (byte 8 8) val)
 	(aref array (+ pos 3)) (ldb (byte 8 0) val)))
-
-;;; We don't define any specialized arithmetic for NTP timestamps but rathter provide integer conversions
-;;; and rely on Common Lisp bignum arithmetic to do the job
-(defmacro big-time (values)
-  "Convert the NTP second/fraction value pair into a (large) integer"
-  (alexandria:with-gensyms (s f)
-    `(multiple-value-bind (,s ,f) ,values
-       (+ (ash ,s 32) ,f))))
-
-(defmacro small-time (time)
-  "Convert the integer time representation back into NTP value pair domain"
-  `(values (ash ,time -32) (logand ,time #xffffffff)))
 
 (defmethod leap-indicator ((o ntp))
   (ldb (byte 2 6) (aref (buffer o) 0)))
