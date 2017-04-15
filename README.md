@@ -18,14 +18,14 @@ After that, `(get-adjusted-universal-time o)` will return you a pair of NTP time
 
 ## API
 
-###`(synchronize ntp-instance &optional (server "pool.ntp.org"))`
+### `(synchronize ntp-instance &optional (server "pool.ntp.org"))`
 
 Synchronizes the application clock with remote server.
 
-###`(get-adjusted-universal-time ntp-instance)`
+### `(get-adjusted-universal-time ntp-instance)`
 
 Returns application time as a pair of values, corresponding to universal time in seconds and NTP formatted 32-bit fraction of a second.
 
-###`(local-stratum ntp-instance)`
+### `(local-stratum ntp-instance)`
 
 Returns the stratum of application clock.
