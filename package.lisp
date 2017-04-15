@@ -4,5 +4,6 @@
 
 (defpackage #:cl-ntp-client
   (:use #:cl)
-  (:export #:synchronize #:get-adjusted-universal-time #:local-stratum #:small-time #:big-time #:ntp #:fraction-to-internal #:internal-to-fraction))
+  (:export #:synchronize #:get-adjusted-universal-time #:local-stratum #:small-time #:big-time
+	   #:adjusted-big-time #:ntp #:fraction-to-internal #:internal-to-fraction))
 
