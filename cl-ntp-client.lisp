@@ -109,14 +109,6 @@
 (defun fraction-to-internal (fraction)
   (ash (* fraction internal-time-units-per-second) -32))
 
-(defun calibrate-real-leap ()
-  "Find the correspondence between universal time and internal real time"
-  (declare (optimize (speed 3) (space 0) (debug 0)))
-  (loop with sec = (get-universal-time)
-     for rt = (get-internal-real-time)
-     when (> (get-universal-time) sec)
-     return (rem rt internal-time-units-per-second)))
-
 (defun real-big-time ()
   (let* ((time (get-internal-real-time))
 	 (seconds (truncate time internal-time-units-per-second))
