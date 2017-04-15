@@ -6,8 +6,6 @@
 
 (in-package #:cl-ntp-client)
 
-(alexandria:define-constant +epoch-timestamp-delta+ 2208988800)
-
 (defclass ntp ()
   ((buffer :reader buffer :initform (make-array 48 :element-type '(unsigned-byte 8) :initial-element 0)
 	   :type '(simple-array (unsigned-byte 8) (48)))
