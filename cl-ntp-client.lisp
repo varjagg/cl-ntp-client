@@ -146,5 +146,5 @@
 	     delta))
       (usocket:socket-close socket))))
 
-(defmethod synchronize ((o ntp) &optional (server "time.nist.gov"))
+(defmethod synchronize ((o ntp) &optional (server "pool.ntp.org"))
   (incf (offset o) (print (run-server-exchange o server))))
