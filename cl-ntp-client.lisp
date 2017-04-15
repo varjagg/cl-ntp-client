@@ -12,6 +12,8 @@
 	   :type '(simple-array (unsigned-byte 8) (48)))
    (offset-s :accessor offset-s :type 'integer :initform 0)
    (offset-f :accessor offset-f :type 'integer :initform 0)
+   (offset :accessor offset :type 'integer :initform (- (big-time (values (get-universal-time) 0))
+							(real-big-time)))
    (local-stratum :accessor local-stratum :type 'integer :initform 8)))
 
 (defun read32 (array pos)
@@ -121,13 +123,11 @@
 	 (fractions (- time (* seconds internal-time-units-per-second))))
     (big-time (values seconds (internal-to-fraction fractions)))))
 
-;;; here we take arbitrary subsecond fraction of internal run time for lack of 'real' universal subsecond
-;;; which is fine as long as it's consistent for duration of the program
-;;; the calculated offset ensures it adjusted properly
+(defmethod adjusted-big-time ((o ntp))
+  (+ (offset o) (real-big-time)))
+
 (defmethod get-adjusted-universal-time ((o ntp))
-  (values (+ (get-universal-time) (offset-s o))
-	  (+ (internal-to-fraction (rem (get-internal-real-time) internal-time-units-per-second))
-	     (offset-f o))))
+  (small-time (adjusted-big-time o)))
 
 (defmethod run-server-exchange ((o ntp) address)
   "Communicates with remote server to return time offset from the local clock"
@@ -143,7 +143,7 @@
 		 (origtm-f o) fraction)
 	   (usocket:socket-send socket (buffer o) dgram-length)
 	   (usocket:socket-receive socket (buffer o) dgram-length)
-	   (let* ((receive-stamp (big-time (get-adjusted-universal-time o)))
+	   (let* ((receive-stamp (adjusted-big-time o))
 		  (transmit-time (big-time (values (txtm-s o) (txtm-f o))))
 		  (delay (floor (- (- receive-stamp (big-time (values seconds fraction)))
 				   (- transmit-time (big-time (values (rxtm-s o) (rxtm-f o)))))
@@ -151,10 +151,8 @@
 		  (deduced (+ transmit-time delay))
 		  (delta (- deduced receive-stamp)))
 	     (setf (local-stratum o) (1+ (stratum o)))
-	     (small-time delta)))
+	     delta))
       (usocket:socket-close socket))))
 
 (defmethod synchronize ((o ntp) &optional (server "time.nist.gov"))
-  (multiple-value-bind (ds df) (run-server-exchange o server)
-    (incf (offset-s o) ds)
-    (incf (offset-f o) (print df))))
+  (incf (offset o) (print (run-server-exchange o server))))
