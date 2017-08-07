@@ -109,12 +109,18 @@
 (defun millis-to-fraction (usec)
   (truncate (ash usec 32) 1000000))
 
+(defun nano-to-fraction (nsec)
+  (truncate (ash nsec 32) 1000000000))
+
 (defun real-big-time ()
   #+sbcl(multiple-value-bind (truth sec usec)
-	    (sb-unix:unix-gettimeofday)
+	    (sb-unix:unix-gettimeofday) ;;non-monotonic clock, but lacking alternatives..
 	  (declare (ignore truth))
 	  (big-time (values sec (millis-to-fraction usec))))
-  #-sbcl(let* ((time (get-internal-real-time))
+  #+ccl(let ((time (ccl:current-time-in-nanoseconds)))
+	 (big-time (values (truncate time 1000000000)
+			   (nano-to-fraction time))))
+  #-(or sbcl ccl)(let* ((time (get-internal-real-time))
 	       (seconds (truncate time internal-time-units-per-second))
 	       (fractions (- time (* seconds internal-time-units-per-second))))
 	  (big-time (values seconds (internal-to-fraction fractions)))))
