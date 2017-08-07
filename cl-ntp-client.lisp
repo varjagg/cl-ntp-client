@@ -106,11 +106,18 @@
 (defun fraction-to-internal (fraction)
   (ash (* fraction internal-time-units-per-second) -32))
 
+(defun millis-to-fraction (usec)
+  (truncate (ash usec 32) 1000000))
+
 (defun real-big-time ()
-  (let* ((time (get-internal-real-time))
-	 (seconds (truncate time internal-time-units-per-second))
-	 (fractions (- time (* seconds internal-time-units-per-second))))
-    (big-time (values seconds (internal-to-fraction fractions)))))
+  #+sbcl(multiple-value-bind (truth sec usec)
+	    (sb-unix:unix-gettimeofday)
+	  (declare (ignore truth))
+	  (big-time (values sec (millis-to-fraction usec))))
+  #-sbcl(let* ((time (get-internal-real-time))
+	       (seconds (truncate time internal-time-units-per-second))
+	       (fractions (- time (* seconds internal-time-units-per-second))))
+	  (big-time (values seconds (internal-to-fraction fractions)))))
 
 (defmethod adjusted-big-time ((o ntp))
   (+ (offset o) (real-big-time)))
