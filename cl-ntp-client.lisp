@@ -6,6 +6,10 @@
 
 (in-package #:cl-ntp-client)
 
+(alexandria:define-constant +millis+ 1000)
+(alexandria:define-constant +micros+ 1000000)
+(alexandria:define-constant +nanos+  1000000000)
+
 ;;; We don't define any specialized arithmetic for NTP timestamps but rathter provide integer conversions
 ;;; and rely on Common Lisp bignum arithmetic to do the job
 (defmacro big-time (values)
@@ -100,30 +104,24 @@
 (defmethod txtm-f ((o ntp))
   (read32 (buffer o) 44))
 
-(defun internal-to-fraction (internal)
-  (truncate (ash internal 32) internal-time-units-per-second))
-
 (defun fraction-to-internal (fraction)
   (ash (* fraction internal-time-units-per-second) -32))
 
-(defun millis-to-fraction (usec)
-  (truncate (ash usec 32) 1000000))
-
-(defun nano-to-fraction (nsec)
-  (truncate (ash nsec 32) 1000000000))
+(defun to-fraction (time divisor-unit)
+  (truncate (ash time 32) divisor-unit))
 
 (defun real-big-time ()
   #+sbcl(multiple-value-bind (truth sec usec)
 	    (sb-unix:unix-gettimeofday) ;;non-monotonic clock, but lacking alternatives..
 	  (declare (ignore truth))
-	  (big-time (values sec (millis-to-fraction usec))))
+	  (big-time (values sec (to-fraction usec +micros+))))
   #+ccl(let ((time (ccl:current-time-in-nanoseconds)))
-	 (big-time (values (truncate time 1000000000)
-			   (nano-to-fraction time))))
+	 (big-time (values (truncate time +nanos+)
+			   (to-fraction time +nanos+))))
   #-(or sbcl ccl)(let* ((time (get-internal-real-time))
 	       (seconds (truncate time internal-time-units-per-second))
 	       (fractions (- time (* seconds internal-time-units-per-second))))
-	  (big-time (values seconds (internal-to-fraction fractions)))))
+	  (big-time (values seconds (to-fraction fractions internal-time-units-per-second)))))
 
 (defmethod adjusted-big-time ((o ntp))
   (+ (offset o) (real-big-time)))
