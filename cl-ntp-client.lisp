@@ -107,6 +107,9 @@
 (defun fraction-to-internal (fraction)
   (ash (* fraction internal-time-units-per-second) -32))
 
+(defun from-fraction (fraction unit)
+  (ash (* fraction unit) -32))
+
 (defun to-fraction (time divisor-unit)
   (truncate (ash time 32) divisor-unit))
 
