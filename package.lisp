@@ -4,6 +4,7 @@
 
 (defpackage #:cl-ntp-client
   (:use #:cl)
+  (:nicknames #:ntp)
   (:export #:synchronize #:get-adjusted-universal-time #:local-stratum #:small-time #:big-time
 	   #:adjusted-big-time #:ntp #:fraction-to-internal #:internal-to-fraction #:to-fraction #:from-fraction
 	   #:+millis+ #:+micros+ #:+nanos+))
