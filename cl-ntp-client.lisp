@@ -27,7 +27,8 @@
 	   :type '(simple-array (unsigned-byte 8) (48)))
    (offset :accessor offset :type 'integer :initform (- (big-time (values (get-universal-time) 0))
 							(real-big-time)))
-   (local-stratum :accessor local-stratum :type 'integer :initform 8)))
+   (local-stratum :accessor local-stratum :type 'integer :initform 8)
+   (address :accessor ntp-address :initform :ntp-address)))
 
 (defun read32 (array pos)
   (logior (ash (aref array pos) 24)
@@ -138,7 +139,8 @@
 					:element-type '(unsigned-byte 8)
 					:timeout 2))
 	(dgram-length (length (buffer o))))
-    (setf (version-number o) 3
+    (setf (ntp-address o) address
+	  (version-number o) 3
 	  (mode o) 3)
     (unwind-protect
 	 (multiple-value-bind (seconds fraction) (get-adjusted-universal-time o)
