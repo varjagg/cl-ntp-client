@@ -7,5 +7,5 @@
   (:nicknames #:ntp)
   (:export #:synchronize #:get-adjusted-universal-time #:local-stratum #:small-time #:big-time
 	   #:adjusted-big-time #:ntp #:fraction-to-internal #:internal-to-fraction #:to-fraction #:from-fraction
-	   #:+millis+ #:+micros+ #:+nanos+))
+	   #:+millis+ #:+micros+ #:+nanos+ #:ntp-address))
 
