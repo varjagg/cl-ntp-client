@@ -108,6 +108,10 @@
 (defun fraction-to-internal (fraction)
   (ash (* fraction internal-time-units-per-second) -32))
 
+(defun sub-internal (fraction)
+  "Returns the remainder of ntp value less than internal-time-units-per-second"
+  (mod fraction internal-time-units-per-second))
+
 (defun from-fraction (fraction unit)
   (ash (* fraction unit) -32))
 
