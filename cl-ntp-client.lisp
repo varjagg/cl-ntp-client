@@ -115,14 +115,26 @@
 (defun from-fraction (fraction unit)
   (ash (* fraction unit) -32))
 
+(defun fraction-to-usec (fraction)
+  "Fixed point conversion to microseconds"
+  (- (ash fraction -12) (* 759 (ash (+ (ash fraction -10) 32768) -16))))
+
+(defun usec-to-fraction (usec)
+  "Fixed point conversion from microseconds"
+  (+ (* 4294 usec) (ash (* 1981 usec) -11) (ash (* 2911 usec) -28)))
+
 (defun to-fraction (time divisor-unit)
   (truncate (ash time 32) divisor-unit))
+
+(defun delay-to-usec (delay)
+  "Scaled delay to microseconds conversion"
+  (* 15.2587890625 delay))
 
 (defun real-big-time ()
   #+sbcl(multiple-value-bind (truth sec usec)
 	    (sb-unix:unix-gettimeofday) ;;non-monotonic clock, but lacking alternatives..
 	  (declare (ignore truth))
-	  (big-time (values sec (to-fraction usec +micros+))))
+	  (big-time (values sec (usec-to-fraction usec))))
   #+ccl(let ((time (ccl:current-time-in-nanoseconds)))
 	 (big-time (values (truncate time +nanos+)
 			   (to-fraction time +nanos+))))
@@ -154,9 +166,9 @@
 	   (usocket:socket-receive socket (buffer o) dgram-length)
 	   (let* ((receive-stamp (adjusted-big-time o))
 		  (transmit-time (big-time (values (txtm-s o) (txtm-f o))))
-		  (delay (floor (- (- receive-stamp (big-time (values seconds fraction)))
-				   (- transmit-time (big-time (values (rxtm-s o) (rxtm-f o)))))
-				2))
+		  (elapsed (- receive-stamp (big-time (values seconds fraction))))
+		  (stall (- transmit-time (big-time (values (rxtm-s o) (rxtm-f o)))))
+		  (delay (floor (- elapsed stall) 2))
 		  (deduced (+ transmit-time delay))
 		  (delta (- deduced receive-stamp)))
 	     (setf (local-stratum o) (1+ (stratum o)))
