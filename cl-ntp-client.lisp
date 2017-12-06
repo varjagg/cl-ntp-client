@@ -130,6 +130,12 @@
   "Scaled delay to microseconds conversion"
   (* 15.2587890625 delay))
 
+(defun fraction-to-seconds (fraction)
+  (/ (fraction-to-usec fraction) +micros+))
+
+(defun seconds-to-fraction (seconds)
+  (usec-to-fraction (round (* seconds +micros+))))
+
 (defun real-big-time ()
   #+sbcl(multiple-value-bind (truth sec usec)
 	    (sb-unix:unix-gettimeofday) ;;non-monotonic clock, but lacking alternatives..
