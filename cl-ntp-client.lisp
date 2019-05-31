@@ -143,7 +143,7 @@
 	  (big-time (values sec (usec-to-fraction usec))))
   #+ccl(let ((time (ccl:current-time-in-nanoseconds)))
 	 (big-time (values (truncate time +nanos+)
-			   (to-fraction time +nanos+))))
+			   (to-fraction (rem time +nanos+) +nanos+))))
   #-(or sbcl ccl)(let* ((time (get-internal-real-time))
 	       (seconds (truncate time internal-time-units-per-second))
 	       (fractions (- time (* seconds internal-time-units-per-second))))
