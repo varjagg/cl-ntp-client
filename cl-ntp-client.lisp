@@ -24,10 +24,10 @@
 
 (defclass ntp ()
   ((buffer :reader buffer :initform (make-array 48 :element-type '(unsigned-byte 8) :initial-element 0)
-	   :type '(simple-array (unsigned-byte 8) (48)))
-   (offset :accessor offset :type 'integer :initform (- (big-time (values (get-universal-time) 0))
+	   :type (simple-array (unsigned-byte 8) (48)))
+   (offset :accessor offset :type integer :initform (- (big-time (values (get-universal-time) 0))
 							(real-big-time)))
-   (local-stratum :accessor local-stratum :type 'integer :initform 8)
+   (local-stratum :accessor local-stratum :type integer :initform 8)
    (address :accessor ntp-address :initform :ntp-address)))
 
 (defun read32 (array pos)
