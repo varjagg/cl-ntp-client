@@ -2,7 +2,7 @@
 ;;;; Should provide a way to get real time with decent fractional precision in a Lisp program, assuming you re-adjust periodically
 ;;;; Does not adjust system clock, PLL drift or do any other platform specific work
 ;;;; Nor does any statistical evaluation of time source or system clock jitter
-;;;; Copyright (c) 2017 Eugene Zaikonnikov
+;;;; Copyright (c) 2017-2026 Eugene Zaikonnikov
 
 (in-package #:cl-ntp-client)
 
@@ -29,6 +29,12 @@
 							(real-big-time)))
    (local-stratum :accessor local-stratum :type integer :initform 8)
    (address :accessor ntp-address :initform :ntp-address)))
+
+(define-condition ntp-server-timeout-error (error)
+  ((address :initarg :address :reader ntp-server-timeout-address))
+  (:report (lambda (condition stream)
+	     (format stream "Timed out waiting for NTP reply from ~A"
+		     (ntp-server-timeout-address condition)))))
 
 (defun read32 (array pos)
   (logior (ash (aref array pos) 24)
