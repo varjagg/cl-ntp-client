@@ -30,11 +30,22 @@
    (local-stratum :accessor local-stratum :type integer :initform 8)
    (address :accessor ntp-address :initform :ntp-address)))
 
-(define-condition ntp-server-timeout-error (error)
+(define-condition ntp-error (error)
+  ())
+
+(define-condition ntp-server-timeout-error (ntp-error)
   ((address :initarg :address :reader ntp-server-timeout-address))
   (:report (lambda (condition stream)
 	     (format stream "Timed out waiting for NTP reply from ~A"
 		     (ntp-server-timeout-address condition)))))
+
+(define-condition ntp-invalid-response-error (ntp-error)
+  ((address :initarg :address :reader ntp-invalid-response-address)
+   (reason :initarg :reason :reader ntp-invalid-response-reason))
+  (:report (lambda (condition stream)
+	     (format stream "Invalid NTP response from ~A: ~A"
+		     (ntp-invalid-response-address condition)
+		     (ntp-invalid-response-reason condition)))))
 
 (defun read32 (array pos)
   (logior (ash (aref array pos) 24)
