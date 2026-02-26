@@ -102,8 +102,14 @@
 (defmethod txtm-s ((o ntp))
   (read32 (buffer o) 40))
 
+(defmethod (setf txtm-s) (stamp (o ntp))
+  (write32 (buffer o) 40 stamp))
+
 (defmethod txtm-f ((o ntp))
   (read32 (buffer o) 44))
+
+(defmethod (setf txtm-f) (stamp (o ntp))
+  (write32 (buffer o) 44 stamp))
 
 (defun fraction-to-internal (fraction)
   (ash (* fraction internal-time-units-per-second) -32))
@@ -166,8 +172,8 @@
 	  (mode o) 3)
     (unwind-protect
 	 (multiple-value-bind (seconds fraction) (get-adjusted-universal-time o)
-	   (setf (origtm-s o) seconds
-		 (origtm-f o) fraction)
+	   (setf (txtm-s o) seconds
+		 (txtm-f o) fraction)
 	   (usocket:socket-send socket (buffer o) dgram-length)
 	   (usocket:socket-receive socket (buffer o) dgram-length)
 	   (let* ((receive-stamp (adjusted-big-time o))
