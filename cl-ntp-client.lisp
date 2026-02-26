@@ -169,10 +169,11 @@
 
 (defmethod run-server-exchange ((o ntp) address)
   "Communicates with remote server to return time offset from the local clock"
-  (let ((socket (usocket:socket-connect address 123 :protocol :datagram
-					:element-type '(unsigned-byte 8)
-					:timeout 2))
-	(dgram-length (length (buffer o))))
+  (let* ((timeout 2)
+	 (socket (usocket:socket-connect address 123 :protocol :datagram
+						     :element-type '(unsigned-byte 8)
+						     :timeout timeout))
+	 (dgram-length (length (buffer o))))
     (setf (ntp-address o) address
 	  (version-number o) 3
 	  (mode o) 3)
@@ -181,6 +182,8 @@
 	   (setf (txtm-s o) seconds
 		 (txtm-f o) fraction)
 	   (usocket:socket-send socket (buffer o) dgram-length)
+	   (unless (usocket:wait-for-input socket :timeout timeout :ready-only t)
+	     (error 'ntp-server-timeout-error :address address))
 	   (usocket:socket-receive socket (buffer o) dgram-length)
 	   (let* ((receive-stamp (adjusted-big-time o))
 		  (transmit-time (big-time (values (txtm-s o) (txtm-f o))))
