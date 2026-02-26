@@ -180,6 +180,29 @@
 (defmethod get-adjusted-universal-time ((o ntp))
   (small-time (adjusted-big-time o)))
 
+(defun validate-server-response (o address response-length request-seconds request-fraction)
+  (when (< response-length 48)
+    (error 'ntp-invalid-response-error
+	   :address address
+	   :reason (format nil "packet too short (~D bytes)" response-length)))
+  (unless (= (mode o) 4)
+    (error 'ntp-invalid-response-error
+	   :address address
+	   :reason (format nil "unexpected mode ~D (expected 4)" (mode o))))
+  (unless (and (= (origtm-s o) request-seconds)
+	       (= (origtm-f o) request-fraction))
+    (error 'ntp-invalid-response-error
+	   :address address
+	   :reason "originate timestamp does not match request transmit timestamp"))
+  (when (= (stratum o) 0)
+    (error 'ntp-invalid-response-error
+	   :address address
+	   :reason "server returned kiss-o'-death (stratum 0)"))
+  (when (= (leap-indicator o) 3)
+    (error 'ntp-invalid-response-error
+	   :address address
+	   :reason "server reports unsynchronized clock (leap indicator 3)")))
+
 (defmethod run-server-exchange ((o ntp) address)
   "Communicates with remote server to return time offset from the local clock"
   (let* ((timeout 2)
@@ -198,7 +221,10 @@
 	   (usocket:socket-send socket (buffer o) dgram-length)
 	   (unless (usocket:wait-for-input socket :timeout timeout :ready-only t)
 	     (error 'ntp-server-timeout-error :address address))
-	   (usocket:socket-receive socket (buffer o) dgram-length)
+	   (multiple-value-bind (response-buffer response-length remote-host remote-port)
+	       (usocket:socket-receive socket (buffer o) dgram-length)
+	     (declare (ignore response-buffer remote-host remote-port))
+	     (validate-server-response o address response-length seconds fraction))
 	   (let* ((receive-stamp (adjusted-big-time o))
 		  (transmit-time (big-time (values (txtm-s o) (txtm-f o))))
 		  (elapsed (- receive-stamp (big-time (values seconds fraction))))
