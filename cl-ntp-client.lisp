@@ -67,10 +67,12 @@
   (aref (buffer o) 1))
 
 (defmethod poll ((o ntp))
-  (aref (buffer o) 2))
+  (let ((value (aref (buffer o) 2)))
+    (if (< value 128) value (- value 256))))
 
 (defmethod precision ((o ntp))
-  (aref (buffer o) 3))
+  (let ((value (aref (buffer o) 3)))
+    (if (< value 128) value (- value 256))))
 
 (defmethod root-delay ((o ntp))
   (read32 (buffer o) 4))
