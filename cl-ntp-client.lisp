@@ -174,6 +174,7 @@
 						     :element-type '(unsigned-byte 8)
 						     :timeout timeout))
 	 (dgram-length (length (buffer o))))
+    (fill (buffer o) 0)
     (setf (ntp-address o) address
 	  (version-number o) 3
 	  (mode o) 3)
