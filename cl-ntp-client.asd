@@ -1,6 +1,6 @@
 ;;;; cl-ntp-client.asd
 ;;;;
-;;;; Copyright (c) 2017 Eugene Zaikonnikov
+;;;; Copyright (c) 2017-2026 Eugene Zaikonnikov
 
 (asdf:defsystem #:cl-ntp-client
   :description "A simple NTP (Network Time Protocol) client in Common Lisp"
