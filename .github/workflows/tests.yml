@@ -30,5 +30,6 @@ jobs:
             --load "$HOME/quicklisp/setup.lisp" \
             --eval '(ql:quickload (list :alexandria :usocket :rove))' \
             --eval '(require :asdf)' \
+            --eval '(asdf:load-asd (truename "cl-ntp-client.asd"))' \
             --eval '(asdf:load-asd (truename "cl-ntp-client-test.asd"))' \
             --eval '(asdf:test-system :cl-ntp-client-test)'
