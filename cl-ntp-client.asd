@@ -8,7 +8,7 @@
   :license "BSD"
   :depends-on (#:alexandria
                #:usocket)
+  :in-order-to ((test-op (test-op "cl-ntp-client-test")))
   :serial t
   :components ((:file "package")
                (:file "cl-ntp-client")))
-
