@@ -1,5 +1,7 @@
 # CL-NTP-CLIENT
 
+[![Tests](https://github.com/varjagg/cl-ntp-client/actions/workflows/tests.yml/badge.svg)](https://github.com/varjagg/cl-ntp-client/actions/workflows/tests.yml)
+
 A simple NTP (Network Time Protocol) client written in Common Lisp.
 
 Does not adjust system clock, PLL drift or do any other platform specific work, nor does any statistical evaluation of time source or system clock jitter.

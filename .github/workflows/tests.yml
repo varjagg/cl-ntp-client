@@ -1,0 +1,34 @@
+name: tests
+
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SBCL and curl
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sbcl curl
+
+      - name: Install Quicklisp
+        run: |
+          curl -fsSLo quicklisp.lisp https://beta.quicklisp.org/quicklisp.lisp
+          sbcl --non-interactive \
+            --load quicklisp.lisp \
+            --eval '(quicklisp-quickstart:install :path (merge-pathnames "quicklisp/" (user-homedir-pathname)))' \
+            --eval '(quit)'
+
+      - name: Run tests
+        env:
+          XDG_CACHE_HOME: /tmp
+        run: |
+          sbcl --non-interactive \
+            --load "$HOME/quicklisp/setup.lisp" \
+            --eval '(ql:quickload (list :alexandria :usocket :rove))' \
+            --eval '(require :asdf)' \
+            --eval '(asdf:load-asd (truename "cl-ntp-client-test.asd"))' \
+            --eval '(asdf:test-system :cl-ntp-client-test)'
